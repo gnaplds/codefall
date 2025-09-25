@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodeFall</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.9.2/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -436,8 +436,6 @@
             </div>
         </div>
 
-        <!-- Instructions - Removed to not block the scene -->
-
         <!-- Ground Line -->
         <div id="ground-line" class="ground-line hidden">
             <div class="ground"></div>
@@ -499,6 +497,13 @@
             playSound(523, 0.2, 'sine', 0.08); // C
             setTimeout(() => playSound(659, 0.2, 'sine', 0.06), 50); // E
             setTimeout(() => playSound(784, 0.3, 'sine', 0.08), 100); // G
+        }
+
+        function playLifeLoss() {
+            // Dramatic descending tone
+            playSound(440, 0.15, 'triangle', 0.12);
+            setTimeout(() => playSound(349, 0.2, 'triangle', 0.1), 100);
+            setTimeout(() => playSound(294, 0.25, 'triangle', 0.08), 200);
         }
 
         function playGameOver() {
@@ -572,7 +577,7 @@
             lives: 3,
             startTime: 0,
             gameTime: 0,
-            baseSpeed: 0.8, // Slower initial speed
+            baseSpeed: 0.8,
             speedMultiplier: 1
         };
 
@@ -596,25 +601,24 @@
             }
         }
 
-        // Load high score
+        // Load high score (using variables instead of localStorage)
         function loadHighScore() {
-            const saved = localStorage.getItem('codeFallHighScore');
-            if (saved) {
-                gameState.highScore = parseInt(saved, 10);
-                document.getElementById('high-score').textContent = gameState.highScore;
-            }
+            // Since we can't use localStorage in Claude artifacts, we'll just keep it in memory
+            gameState.highScore = 0;
+            document.getElementById('high-score').textContent = gameState.highScore;
         }
 
-        // Save high score
+        // Save high score (placeholder - would normally use localStorage)
         function saveHighScore() {
-            localStorage.setItem('codeFallHighScore', gameState.highScore.toString());
+            // In a real environment, this would save to localStorage
+            // localStorage.setItem('codeFallHighScore', gameState.highScore.toString());
         }
 
         // Calculate dynamic speed based on time and add randomness like rain
         function calculateWordSpeed() {
             const minutes = Math.floor(gameState.gameTime / 60);
-            const baseSpeedIncrease = minutes * 0.3; // Increase every minute
-            const randomVariation = Math.random() * 0.8 + 0.6; // Random variation like rain
+            const baseSpeedIncrease = minutes * 0.3;
+            const randomVariation = Math.random() * 0.8 + 0.6;
             return gameState.baseSpeed + baseSpeedIncrease + randomVariation;
         }
 
@@ -667,8 +671,8 @@
             });
         }
 
-        // Trigger confetti celebration
-        function triggerConfetti(wordX, wordY) {
+        // Trigger success confetti (when word is completed correctly)
+        function triggerSuccessConfetti(wordX, wordY) {
             if (typeof confetti === 'undefined') return;
             
             const screenWidth = window.innerWidth || 800;
@@ -677,14 +681,57 @@
             const originX = Math.max(0.1, Math.min(0.9, wordX / screenWidth));
             const originY = Math.max(0.1, Math.min(0.8, (wordY + 60) / screenHeight));
             
+            // Success confetti - smaller particles
             confetti({
-                particleCount: 60,
-                spread: 80,
+                particleCount: 50,
+                spread: 60,
                 origin: { x: originX, y: originY },
                 colors: ['#22c55e', '#3b82f6', '#8b5cf6', '#06b6d4'],
                 gravity: 1,
-                scalar: 1.3,
+                scalar: 0.8,
                 drift: 0
+            });
+        }
+
+        // Trigger ground hit confetti (when word hits the ground)
+        function triggerGroundHitConfetti(wordX, wordY) {
+            if (typeof confetti === 'undefined') return;
+            
+            const screenWidth = window.innerWidth || 800;
+            const originX = Math.max(0.1, Math.min(0.9, wordX / screenWidth));
+            
+            // Ground hit confetti - smaller red and orange particles
+            confetti({
+                particleCount: 30,
+                spread: 50,
+                origin: { x: originX, y: 0.95 },
+                colors: ['#ef4444', '#f59e0b', '#dc2626', '#ea580c'],
+                gravity: 0.8,
+                scalar: 0.6,
+                drift: 0,
+                startVelocity: 20
+            });
+        }
+
+        // Trigger game over confetti (dramatic effect)
+        function triggerGameOverConfetti() {
+            if (typeof confetti === 'undefined') return;
+            
+            // Multiple small bursts from different positions
+            const positions = [0.2, 0.4, 0.6, 0.8];
+            
+            positions.forEach((x, index) => {
+                setTimeout(() => {
+                    confetti({
+                        particleCount: 40,
+                        spread: 70,
+                        origin: { x: x, y: 0.6 },
+                        colors: ['#ef4444', '#f59e0b', '#dc2626', '#ea580c', '#7c2d12'],
+                        gravity: 1,
+                        scalar: 0.7,
+                        drift: 0
+                    });
+                }, index * 150);
             });
         }
 
@@ -739,7 +786,7 @@
             // Start time updates
             timeUpdateInterval = setInterval(updateGameTime, 1000);
             
-            // Dynamic spawn rate based on difficulty - REDUCED FREQUENCY
+            // Dynamic spawn rate based on difficulty
             const spawnWord = () => {
                 if (!gameState.gameRunning) return;
                 
@@ -749,14 +796,14 @@
                 const wordElement = createFallingWordElement(newWord);
                 document.getElementById('falling-words-area').appendChild(wordElement);
                 
-                // Slower spawn rate - increased base time and reduced acceleration
+                // Slower spawn rate
                 const minutes = Math.floor(gameState.gameTime / 60);
-                const spawnRate = Math.max(2000, 3500 - (minutes * 150)); // Slower spawning
+                const spawnRate = Math.max(2000, 3500 - (minutes * 150));
                 
-                setTimeout(spawnWord, spawnRate + Math.random() * 1200); // More randomness
+                setTimeout(spawnWord, spawnRate + Math.random() * 1200);
             };
             
-            // Start spawning words with longer initial delay
+            // Start spawning words
             setTimeout(spawnWord, 2500);
             
             // Start game loop
@@ -793,6 +840,11 @@
             
             gameState.gameRunning = false;
             gameState.gameOver = true;
+            
+            // Trigger game over confetti
+            setTimeout(() => {
+                triggerGameOverConfetti();
+            }, 500);
             
             if (gameState.score > gameState.highScore) {
                 gameState.highScore = gameState.score;
@@ -834,7 +886,11 @@
                 
                 // Check if word hit the ground
                 if (wordObj.y > screenHeight - 80) {
+                    // Trigger ground hit confetti
+                    triggerGroundHitConfetti(wordObj.x, wordObj.y);
+                    
                     gameState.lives--;
+                    playLifeLoss();
                     element.remove();
                     
                     if (gameState.lives <= 0) {
@@ -872,6 +928,9 @@
                 
                 const matchedWord = gameState.words[matchIndex];
                 
+                // Trigger success confetti at the matched word position
+                triggerSuccessConfetti(matchedWord.x, matchedWord.y);
+                
                 // Remove word from game state and DOM
                 gameState.words.splice(matchIndex, 1);
                 const element = document.getElementById(matchedWord.id);
@@ -894,11 +953,6 @@
                         updateWordElement(wordElement, wordObj.word, '');
                     }
                 });
-                
-                // Trigger confetti at the matched word position
-                setTimeout(() => {
-                    triggerConfetti(matchedWord.x, matchedWord.y);
-                }, 50);
                 
                 updateUI();
             }
