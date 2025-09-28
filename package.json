@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "A speed typing game for programming enthusiasts",
   "main": "index.html",
+  "type": "module",
   "scripts": {
     "dev": "vercel dev",
     "build": "echo 'Static build - no build step needed'",
@@ -11,6 +12,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.38.1"
   },
+  "devDependencies": {
+    "vercel": "^41.0.2"
+  },
   "keywords": [
     "typing-game",
     "programming",
@@ -18,5 +22,8 @@
     "game"
   ],
   "author": "Gene Apiladas",
-  "license": "MIT"
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }
