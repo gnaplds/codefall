@@ -1,22 +1,43 @@
-// api/scores.js - Simple version using JSONBin
-const JSONBIN_API_KEY = process.env.JSONBIN_API_KEY || '$2a$10$Eh4t5JEkHp8EYKuLOkRhF.hNbzUhcZLR6Hn7zlmOhP8MzQvFn1vca'
-const BIN_ID = process.env.BIN_ID || '6746c8e5e41b4d34e45b5a23'
+// api/scores.js - Fixed version
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_ANON_KEY
+
+const supabase = createClient(supabaseUrl, supabaseKey)
 
 export default async function handler(req, res) {
+  // Set CORS headers for all requests
   res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
+  // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    res.status(200).end()
-    return
+    return res.status(200).end()
   }
 
+  // Only allow POST requests for this endpoint
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' })
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      debug: `Received ${req.method}, expected POST`
+    })
   }
 
   try {
+    console.log('Processing score save request')
+    console.log('Request body:', req.body)
+
+    // Validate environment variables
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials')
+      return res.status(500).json({ 
+        error: 'Server configuration error',
+        debug: 'Missing Supabase environment variables'
+      })
+    }
+
     const {
       playerName,
       score,
@@ -27,78 +48,88 @@ export default async function handler(req, res) {
       accuracy
     } = req.body
 
-    if (!playerName || score === undefined || !timeSurvived || !difficulty) {
-      return res.status(400).json({ error: 'Missing required fields' })
+    // Validate required fields
+    if (!playerName || score === undefined || score === null || !timeSurvived || !difficulty) {
+      console.log('Validation failed - missing fields:', { 
+        hasPlayerName: !!playerName, 
+        hasScore: score !== undefined && score !== null, 
+        hasTimeSurvived: !!timeSurvived, 
+        hasDifficulty: !!difficulty 
+      })
+      return res.status(400).json({ 
+        error: 'Missing required fields',
+        required: ['playerName', 'score', 'timeSurvived', 'difficulty']
+      })
+    }
+
+    // Validate field lengths and values
+    if (playerName.length > 50) {
+      return res.status(400).json({ error: 'Player name too long (max 50 characters)' })
+    }
+
+    if (score < 0 || (timeInSeconds && timeInSeconds < 0)) {
+      return res.status(400).json({ error: 'Score and time must be non-negative' })
+    }
+
+    if (!['easy', 'challenge'].includes(difficulty)) {
+      return res.status(400).json({ error: 'Invalid difficulty level' })
     }
 
     // Generate unique game ID
     const gameId = Math.random().toString(36).substr(2, 9) + Date.now().toString(36)
 
-    // Get existing scores
-    let existingScores = []
-    try {
-      const getResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-        headers: {
-          'X-Master-Key': JSONBIN_API_KEY
-        }
+    const scoreData = {
+      game_id: gameId,
+      player_name: playerName.trim(),
+      score: parseInt(score, 10),
+      time_survived: timeSurvived,
+      time_in_seconds: parseInt(timeInSeconds, 10) || 0,
+      difficulty: difficulty,
+      words_typed: parseInt(wordsTyped, 10) || 0,
+      accuracy: parseInt(accuracy, 10) || 100,
+      created_at: new Date().toISOString()
+    }
+
+    console.log('Inserting score data:', scoreData)
+
+    // Insert into database
+    const { data, error } = await supabase
+      .from('scores')
+      .insert([scoreData])
+      .select()
+
+    if (error) {
+      console.error('Database insertion error:', error)
+      return res.status(500).json({ 
+        error: 'Failed to save score to database',
+        debug: error.message,
+        hint: error.hint || 'Check if the scores table exists and has proper permissions'
       })
-      if (getResponse.ok) {
-        const data = await getResponse.json()
-        existingScores = Array.isArray(data.record) ? data.record : []
-      }
-    } catch (error) {
-      console.log('Could not fetch existing scores, starting fresh')
     }
 
-    // Add new score
-    const newScore = {
-      gameId,
-      playerName: playerName.trim(),
-      score: parseInt(score),
-      timeSurvived,
-      timeInSeconds: parseInt(timeInSeconds) || 0,
-      difficulty,
-      wordsTyped: parseInt(wordsTyped) || 0,
-      accuracy: parseInt(accuracy) || 100,
-      createdAt: new Date().toISOString()
-    }
+    console.log('Score saved successfully:', data)
 
-    existingScores.push(newScore)
+    // Create share URL
+    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const host = req.headers.host
+    const shareUrl = `${protocol}://${host}?highlight=${gameId}`
 
-    // Keep only the latest 1000 scores to avoid hitting storage limits
-    if (existingScores.length > 1000) {
-      existingScores = existingScores.slice(-1000)
-    }
-
-    // Save back to JSONBin
-    const updateResponse = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Master-Key': JSONBIN_API_KEY
-      },
-      body: JSON.stringify(existingScores)
-    })
-
-    if (!updateResponse.ok) {
-      throw new Error('Failed to save to storage')
-    }
-
-    const baseUrl = req.headers.host?.includes('localhost') 
-      ? `http://${req.headers.host}`
-      : `https://${req.headers.host}`
-    
-    const shareUrl = `${baseUrl}?highlight=${gameId}`
-
-    res.status(201).json({
+    const response = {
       success: true,
-      gameId,
-      shareUrl,
-      message: 'Score saved successfully'
-    })
+      gameId: gameId,
+      shareUrl: shareUrl,
+      message: 'Score saved successfully',
+      data: data[0]
+    }
+
+    return res.status(201).json(response)
 
   } catch (error) {
-    console.error('Error saving score:', error)
-    res.status(500).json({ error: 'Failed to save score' })
+    console.error('Unexpected error in scores API:', error)
+    return res.status(500).json({ 
+      error: 'Internal server error',
+      debug: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    })
   }
 }

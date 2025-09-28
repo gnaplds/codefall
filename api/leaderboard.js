@@ -1,84 +1,87 @@
-// api/leaderboard.js - Debug Version
-export default async function handler(req, res) {
-  console.log('Leaderboard API endpoint hit:', req.method, req.url)
-  console.log('Query params:', req.query)
-  console.log('Environment check:', {
-    hasSupabaseUrl: !!process.env.SUPABASE_URL,
-    hasSupabaseKey: !!process.env.SUPABASE_ANON_KEY
-  })
+// api/leaderboard.js - Fixed version
+import { createClient } from '@supabase/supabase-js'
 
+const supabaseUrl = process.env.SUPABASE_URL
+const supabaseKey = process.env.SUPABASE_ANON_KEY
+
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
 
   // Handle preflight request
   if (req.method === 'OPTIONS') {
-    console.log('OPTIONS request handled')
-    res.status(200).end()
-    return
+    return res.status(200).end()
   }
 
   if (req.method !== 'GET') {
-    console.log('Method not allowed:', req.method)
-    return res.status(405).json({ error: 'Method not allowed' })
+    return res.status(405).json({ 
+      error: 'Method not allowed',
+      debug: `Received ${req.method}, expected GET`
+    })
   }
 
   try {
-    // Check if environment variables are set
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-      console.error('Missing environment variables')
+    console.log('Loading leaderboard...')
+    console.log('Query parameters:', req.query)
+
+    // Validate environment variables
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Missing Supabase credentials')
       return res.status(500).json({ 
         error: 'Server configuration error',
-        debug: 'Missing Supabase credentials'
-      })
-    }
-
-    // Try to import Supabase
-    let supabase
-    try {
-      const { createClient } = await import('@supabase/supabase-js')
-      supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY)
-      console.log('Supabase client created successfully')
-    } catch (importError) {
-      console.error('Failed to import Supabase:', importError)
-      return res.status(500).json({ 
-        error: 'Server dependency error',
-        debug: 'Supabase import failed'
+        debug: 'Missing Supabase environment variables'
       })
     }
 
     const { difficulty } = req.query
-    const limit = parseInt(req.query.limit) || 50
+    const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100) // Cap at 100
 
-    console.log('Query parameters:', { difficulty, limit })
+    console.log('Fetching scores with params:', { difficulty, limit })
 
+    // Build query
     let query = supabase
       .from('scores')
-      .select('*')
+      .select(`
+        game_id,
+        player_name,
+        score,
+        time_survived,
+        time_in_seconds,
+        difficulty,
+        words_typed,
+        accuracy,
+        created_at
+      `)
       .order('score', { ascending: false })
       .limit(limit)
 
     // Filter by difficulty if specified
     if (difficulty && difficulty !== 'all') {
+      if (!['easy', 'challenge'].includes(difficulty)) {
+        return res.status(400).json({ error: 'Invalid difficulty filter' })
+      }
       query = query.eq('difficulty', difficulty)
-      console.log('Filtering by difficulty:', difficulty)
     }
 
     console.log('Executing database query...')
     const { data, error } = await query
 
     if (error) {
-      console.error('Database error:', error)
+      console.error('Database query error:', error)
       return res.status(500).json({ 
         error: 'Failed to load leaderboard',
-        debug: error.message 
+        debug: error.message,
+        hint: error.hint || 'Check if the scores table exists and has proper permissions'
       })
     }
 
-    console.log(`Retrieved ${data?.length || 0} scores from database`)
+    console.log(`Successfully retrieved ${data?.length || 0} scores`)
 
-    // Format the response to match what the frontend expects
+    // Format the response data
     const formattedScores = (data || []).map(score => ({
       gameId: score.game_id,
       playerName: score.player_name,
@@ -94,17 +97,20 @@ export default async function handler(req, res) {
     const response = {
       success: true,
       scores: formattedScores,
-      count: formattedScores.length
+      count: formattedScores.length,
+      filter: difficulty || 'all',
+      limit: limit
     }
 
-    console.log('Sending response with', formattedScores.length, 'scores')
-    res.status(200).json(response)
+    console.log('Sending leaderboard response with', formattedScores.length, 'scores')
+    return res.status(200).json(response)
 
   } catch (error) {
-    console.error('Unexpected error in leaderboard:', error)
-    res.status(500).json({ 
+    console.error('Unexpected error in leaderboard API:', error)
+    return res.status(500).json({ 
       error: 'Internal server error',
-      debug: error.message
+      debug: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     })
   }
 }
