@@ -910,6 +910,163 @@ class CodeFallGame {
         });
     }
 
+    // Add this new method to your CodeFallGame class:
+
+    showLeaderboardWithHighlight(gameId) {
+        console.log('Showing leaderboard with highlight for game:', gameId);
+        
+        this.hideAllScreens();
+        document.getElementById('leaderboard-screen').classList.remove('hidden');
+        
+        // Reset filter
+        this.currentLeaderboardFilter = 'all';
+        this.updateFilterButtons();
+        
+        // Load leaderboard and then highlight the specific game
+        this.loadLeaderboardWithHighlight(gameId);
+    }
+
+    // Add this new method to load leaderboard and highlight specific entry:
+
+    async loadLeaderboardWithHighlight(highlightGameId) {
+        try {
+            document.getElementById('leaderboard-list').innerHTML = 
+                '<div class="message" style="text-align: center; padding: 2rem;">Loading leaderboard...</div>';
+            
+            const url = `${window.location.origin}/api/leaderboard`;
+            
+            console.log('Loading leaderboard from:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+
+            console.log('Leaderboard response status:', response.status);
+            
+            const data = await response.json();
+            console.log('Leaderboard data:', data);
+            
+            if (response.ok) {
+                this.displayLeaderboard(data.scores || []);
+                
+                // Highlight the specific game after a short delay
+                setTimeout(() => {
+                    this.highlightGameEntry(highlightGameId);
+                }, 300);
+            } else {
+                console.error('Leaderboard error response:', data);
+                throw new Error(data.debug || data.error || 'Failed to load leaderboard');
+            }
+        } catch (error) {
+            console.error('Error loading leaderboard:', error);
+            document.getElementById('leaderboard-list').innerHTML = 
+                `<div class="message error" style="text-align: center; padding: 2rem;">
+                    Failed to load leaderboard: ${error.message}
+                </div>`;
+        }
+    }
+
+    // Add this method to highlight a specific game entry:
+
+    highlightGameEntry(gameId) {
+        console.log('Attempting to highlight game:', gameId);
+        
+        const gameElement = document.querySelector(`[data-game-id="${gameId}"]`);
+        
+        if (gameElement) {
+            console.log('Found game element, applying highlight');
+            
+            // Add highlight styling
+            gameElement.style.background = 'rgba(59, 130, 246, 0.4)';
+            gameElement.style.border = '2px solid var(--color-primary)';
+            gameElement.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.6)';
+            gameElement.style.transform = 'scale(1.02)';
+            gameElement.style.transition = 'all 0.3s ease';
+            
+            // Add a pulsing animation
+            gameElement.style.animation = 'highlight-pulse 2s ease-in-out infinite alternate';
+            
+            // Scroll to the highlighted element
+            setTimeout(() => {
+                gameElement.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center',
+                    inline: 'center'
+                });
+            }, 100);
+            
+            // Add a temporary message
+            this.showHighlightMessage();
+            
+            // Remove highlight after 10 seconds
+            setTimeout(() => {
+                gameElement.style.background = '';
+                gameElement.style.border = '';
+                gameElement.style.boxShadow = '';
+                gameElement.style.transform = '';
+                gameElement.style.animation = '';
+            }, 10000);
+            
+        } else {
+            console.log('Game element not found in leaderboard');
+            
+            // Show message that the score might not be visible
+            document.getElementById('leaderboard-list').insertAdjacentHTML('afterbegin', 
+                `<div id="highlight-not-found" class="message" style="text-align: center; padding: 1rem; background: rgba(245, 158, 11, 0.2); border: 1px solid var(--color-warning); border-radius: var(--border-radius-sm); margin-bottom: 1rem;">
+                    <p style="color: var(--color-warning); font-weight: bold;">Looking for a specific score?</p>
+                    <p style="color: var(--text-secondary); font-size: var(--font-size-sm);">The score you're looking for might be on a different difficulty filter or further down the list.</p>
+                </div>`
+            );
+            
+            // Remove message after 5 seconds
+            setTimeout(() => {
+                const notFoundElement = document.getElementById('highlight-not-found');
+                if (notFoundElement) {
+                    notFoundElement.remove();
+                }
+            }, 5000);
+        }
+    }
+
+    // Add this method to show highlight message:
+
+    showHighlightMessage() {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        const messageElement = document.createElement('div');
+        messageElement.id = 'highlight-message';
+        messageElement.style.cssText = `
+            text-align: center; 
+            padding: 1rem; 
+            background: rgba(34, 197, 94, 0.2); 
+            border: 1px solid var(--color-success); 
+            border-radius: var(--border-radius-sm); 
+            margin-bottom: 1rem;
+            animation: fadeIn 0.5s ease;
+        `;
+        
+        messageElement.innerHTML = `
+            <p style="color: var(--color-success); font-weight: bold; margin: 0;">🎯 Found the shared score!</p>
+            <p style="color: var(--text-secondary); font-size: var(--font-size-sm); margin: 0.5rem 0 0 0;">This score is highlighted below.</p>
+        `;
+        
+        leaderboardList.insertBefore(messageElement, leaderboardList.firstChild);
+        
+        // Remove message after 8 seconds
+        setTimeout(() => {
+            if (messageElement && messageElement.parentNode) {
+                messageElement.style.animation = 'fadeOut 0.5s ease';
+                setTimeout(() => {
+                    if (messageElement.parentNode) {
+                        messageElement.parentNode.removeChild(messageElement);
+                    }
+                }, 500);
+            }
+        }, 8000);
+    }
+
     // UI Helper Methods
     showMessage(message, type) {
         const errorElement = document.getElementById('save-error');
@@ -1105,20 +1262,20 @@ if (document.readyState === 'loading') {
     initGame();
 }
 
-// Check for highlighted game on load
+// Check for highlighted game on load - Fixed version
 window.addEventListener('load', () => {
     const urlParams = new URLSearchParams(window.location.search);
     const highlightGameId = urlParams.get('highlight');
-    if (highlightGameId && window.sharedGameData) {
-        game.showLeaderboard();
+    
+    if (highlightGameId) {
+        console.log('Found highlight parameter:', highlightGameId);
+        
+        // Wait for game to initialize
         setTimeout(() => {
-            const gameElement = document.querySelector(`[data-game-id="${highlightGameId}"]`);
-            if (gameElement) {
-                gameElement.style.background = 'rgba(59, 130, 246, 0.3)';
-                gameElement.style.border = '2px solid var(--color-primary)';
-                gameElement.style.animation = 'highlight-pulse 2s ease-in-out infinite alternate';
-                gameElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (game) {
+                // Go directly to leaderboard with highlighting
+                game.showLeaderboardWithHighlight(highlightGameId);
             }
-        }, 1000);
+        }, 500);
     }
 });

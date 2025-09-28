@@ -110,9 +110,11 @@ export default async function handler(req, res) {
     console.log('Score saved successfully:', data)
 
     // Create share URL
-    const protocol = req.headers['x-forwarded-proto'] || 'https'
+    const protocol = req.headers['x-forwarded-proto'] || (req.headers.host?.includes('localhost') ? 'http' : 'https')
     const host = req.headers.host
     const shareUrl = `${protocol}://${host}?highlight=${gameId}`
+    
+    console.log('Generated share URL:', shareUrl)
 
     const response = {
       success: true,

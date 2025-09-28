@@ -115,6 +115,67 @@ body {
     }
 }
 
+@keyframes highlight-pulse {
+    from { 
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+        transform: scale(1.02);
+    }
+    to { 
+        box-shadow: 0 0 30px rgba(59, 130, 246, 0.8);
+        transform: scale(1.03);
+    }
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(-10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+@keyframes fadeOut {
+    from { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+    to { 
+        opacity: 0; 
+        transform: translateY(-10px); 
+    }
+}
+
+/* Enhanced leaderboard item styling for better highlighting */
+.leaderboard-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--spacing-md);
+    margin-bottom: var(--spacing-sm);
+    background: rgba(51, 65, 85, 0.5);
+    border-radius: var(--border-radius-sm);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.leaderboard-item:hover {
+    background: rgba(51, 65, 85, 0.7);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Special styling for highlighted items */
+.leaderboard-item[data-highlighted="true"] {
+    background: rgba(59, 130, 246, 0.4) !important;
+    border: 2px solid var(--color-primary) !important;
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6) !important;
+    transform: scale(1.02) !important;
+}
+
 .game-container {
     position: relative;
     width: 100vw;
