@@ -793,7 +793,7 @@ class CodeFallGame {
             return;
         }
 
-        if (playerName.length > 50) {
+        if (playerName.length > 10) {
             this.showMessage('Name is too long (max 50 characters)', 'error');
             return;
         }
@@ -931,22 +931,61 @@ class CodeFallGame {
         document.getElementById('save-success').classList.add('hidden');
     }
 
-    resetSaveForm() {
-        document.getElementById('save-score-form').style.display = 'block';
-        document.getElementById('share-section').classList.add('hidden');
-        document.getElementById('player-name').value = '';
-        this.hideMessages();
-    }
-
+    // Fixed showShareSection function - replaces the original one
     showShareSection(shareUrl) {
+        const saveForm = document.getElementById('save-score-form');
         const shareSection = document.getElementById('share-section');
         const shareUrlElement = document.getElementById('share-url');
         
+        // Update share URL
         shareUrlElement.textContent = shareUrl;
+        
+        // Show share section
         shareSection.classList.remove('hidden');
         
-        // Hide the save form
-        document.getElementById('save-score-form').style.display = 'none';
+        // Hide only the form elements, not the entire panel
+        const formElements = saveForm.querySelectorAll('.form-group, button[type="submit"], #save-feedback');
+        formElements.forEach(element => {
+            element.style.display = 'none';
+        });
+        
+        // Update the panel title to indicate success
+        const panelTitle = saveForm.querySelector('h3');
+        if (panelTitle) {
+            panelTitle.textContent = 'Score Saved Successfully!';
+            panelTitle.style.color = 'var(--color-success)';
+            panelTitle.style.textShadow = '0 0 10px var(--color-success)';
+        }
+    }
+
+    // Also update the resetSaveForm function to properly reset everything
+    resetSaveForm() {
+        const saveForm = document.getElementById('save-score-form');
+        const shareSection = document.getElementById('share-section');
+        
+        // Show the save form panel
+        saveForm.style.display = 'block';
+        
+        // Hide share section
+        shareSection.classList.add('hidden');
+        
+        // Show all form elements again
+        const formElements = saveForm.querySelectorAll('.form-group, button[type="submit"], #save-feedback');
+        formElements.forEach(element => {
+            element.style.display = '';
+        });
+        
+        // Reset the panel title
+        const panelTitle = saveForm.querySelector('h3');
+        if (panelTitle) {
+            panelTitle.textContent = 'Save Your Score';
+            panelTitle.style.color = '';
+            panelTitle.style.textShadow = '';
+        }
+        
+        // Clear input and messages
+        document.getElementById('player-name').value = '';
+        this.hideMessages();
     }
 
     copyShareUrl() {
