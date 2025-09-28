@@ -467,6 +467,8 @@ body {
     border-radius: var(--border-radius-lg);
     padding: var(--spacing-lg);
     backdrop-filter: blur(15px);
+    min-height: 200px; /* Ensure minimum height */
+    display: block; /* Force display */
 }
 
 .stats-panel h3 {
@@ -531,6 +533,38 @@ body {
     outline: none;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Ensure the save score form panel maintains its structure */
+#save-score-form {
+    display: block !important; /* Force it to show */
+    background: rgba(30, 41, 59, 0.9);
+    border: 2px solid #4b5563;
+    border-radius: var(--border-radius-lg);
+    padding: var(--spacing-lg);
+    backdrop-filter: blur(15px);
+    min-height: 200px;
+}
+
+/* Share section styling */
+#share-section {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: rgba(51, 65, 85, 0.3);
+    border-radius: var(--border-radius-sm);
+    border: 1px solid var(--color-success);
+}
+
+#share-url {
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid #4b5563;
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing-sm);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    color: var(--text-muted);
+    word-break: break-all;
+    margin: var(--spacing-sm) 0;
 }
 
 /* Messages */

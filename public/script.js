@@ -931,9 +931,7 @@ class CodeFallGame {
         document.getElementById('save-success').classList.add('hidden');
     }
 
-    // Fixed showShareSection function - replaces the original one
     showShareSection(shareUrl) {
-        const saveForm = document.getElementById('save-score-form');
         const shareSection = document.getElementById('share-section');
         const shareUrlElement = document.getElementById('share-url');
         
@@ -943,40 +941,59 @@ class CodeFallGame {
         // Show share section
         shareSection.classList.remove('hidden');
         
-        // Hide only the form elements, not the entire panel
-        const formElements = saveForm.querySelectorAll('.form-group, button[type="submit"], #save-feedback');
-        formElements.forEach(element => {
-            element.style.display = 'none';
-        });
+        // Hide only the form content, keep the panel structure
+        const playerNameInput = document.getElementById('player-name');
+        const submitButton = document.querySelector('#save-score-form button[type="submit"]');
+        const saveMessages = document.getElementById('save-feedback');
+        const formGroup = document.querySelector('#save-score-form .form-group');
         
-        // Update the panel title to indicate success
-        const panelTitle = saveForm.querySelector('h3');
+        if (formGroup) formGroup.style.display = 'none';
+        if (submitButton) submitButton.style.display = 'none';
+        if (saveMessages) saveMessages.style.display = 'none';
+        
+        // Update the panel title
+        const panelTitle = document.querySelector('#save-score-form h3');
         if (panelTitle) {
             panelTitle.textContent = 'Score Saved Successfully!';
             panelTitle.style.color = 'var(--color-success)';
             panelTitle.style.textShadow = '0 0 10px var(--color-success)';
         }
+        
+        // Add success styling to the panel
+        const savePanel = document.getElementById('save-score-form');
+        if (savePanel) {
+            savePanel.style.border = '2px solid var(--color-success)';
+            savePanel.style.boxShadow = '0 0 20px rgba(34, 197, 94, 0.3)';
+        }
     }
 
-    // Also update the resetSaveForm function to properly reset everything
     resetSaveForm() {
         const saveForm = document.getElementById('save-score-form');
         const shareSection = document.getElementById('share-section');
         
-        // Show the save form panel
-        saveForm.style.display = 'block';
+        // Make sure the save form panel is visible
+        if (saveForm) {
+            saveForm.style.display = 'block';
+            saveForm.style.border = '';
+            saveForm.style.boxShadow = '';
+        }
         
         // Hide share section
-        shareSection.classList.add('hidden');
+        if (shareSection) {
+            shareSection.classList.add('hidden');
+        }
         
-        // Show all form elements again
-        const formElements = saveForm.querySelectorAll('.form-group, button[type="submit"], #save-feedback');
-        formElements.forEach(element => {
-            element.style.display = '';
-        });
+        // Show form elements
+        const formGroup = document.querySelector('#save-score-form .form-group');
+        const submitButton = document.querySelector('#save-score-form button[type="submit"]');
+        const saveMessages = document.getElementById('save-feedback');
+        
+        if (formGroup) formGroup.style.display = '';
+        if (submitButton) submitButton.style.display = '';
+        if (saveMessages) saveMessages.style.display = '';
         
         // Reset the panel title
-        const panelTitle = saveForm.querySelector('h3');
+        const panelTitle = document.querySelector('#save-score-form h3');
         if (panelTitle) {
             panelTitle.textContent = 'Save Your Score';
             panelTitle.style.color = '';
@@ -984,7 +1001,11 @@ class CodeFallGame {
         }
         
         // Clear input and messages
-        document.getElementById('player-name').value = '';
+        const playerNameInput = document.getElementById('player-name');
+        if (playerNameInput) {
+            playerNameInput.value = '';
+        }
+        
         this.hideMessages();
     }
 
