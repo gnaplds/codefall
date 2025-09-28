@@ -3,124 +3,249 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CodeFall - Typing Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <title>CodeFall - Programming Typing Game</title>
+    <meta name="description" content="Type falling programming terms before they hit the ground in this fast-paced coding game">
     <link rel="icon" type="image/png" href="/icons8-keyboard-96.png">
-    <script src="script.js"></script>
+    
+    <!-- Open Graph tags for social sharing -->
+    <meta property="og:title" content="CodeFall - Programming Typing Game">
+    <meta property="og:description" content="Test your typing skills with programming terms in this addictive web game">
+    <meta property="og:type" content="website">
+    
+    <link rel="stylesheet" href="styles.css">
+    <script src="script.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
     <!-- Animated Background -->
-    <div class="background-particles" id="particles"></div>
+    <div class="background-particles" id="particles" aria-hidden="true"></div>
 
-    <main class="game-container">
-        <!-- Score Display and Lives -->
-        <div class="score-display">
-            <div class="score-box">
-                Score: <span id="score" style="font-weight: bold;">0</span>
+    <main id="main-content" class="game-container">
+        <!-- Game Header -->
+        <header class="game-header">
+            <div class="stat-box">
+                Score: <span id="score" class="stat-value score">0</span>
             </div>
             
-            <div id="time-display" class="time-display hidden">
-                Time: <span id="game-time">0:00</span>
+            <div id="time-display" class="stat-box time-display hidden">
+                Time: <span id="game-time" class="stat-value time">0:00</span>
+            </div>
+
+            <div id="difficulty-display" class="stat-box difficulty-display hidden">
+                Mode: <span id="current-difficulty" class="stat-value difficulty">Easy</span>
             </div>
             
-            <div id="lives-display" class="lives-display hidden">
-                <span style="margin-right: 0.5rem;">Lives:</span>
-                <span class="heart" data-life="0">♥</span>
-                <span class="heart" data-life="1">♥</span>
-                <span class="heart" data-life="2">♥</span>
+            <div id="lives-display" class="stat-box lives-display hidden">
+                <span class="sr-only">Lives remaining:</span>
+                <span aria-label="3 lives remaining">Lives:</span>
+                <span class="heart" data-life="0" aria-hidden="true">♥</span>
+                <span class="heart" data-life="1" aria-hidden="true">♥</span>
+                <span class="heart" data-life="2" aria-hidden="true">♥</span>
             </div>
             
-            <div class="score-box">
-                High: <span id="high-score" style="font-weight: bold;">0</span>
+            <div class="stat-box">
+                High: <span id="high-score" class="stat-value score">0</span>
             </div>
-        </div>
+        </header>
 
         <!-- Welcome Screen -->
-        <div id="welcome-screen" class="welcome-screen">
-            <h1 class="title">CodeFall</h1>
+        <section id="welcome-screen" class="screen-overlay" role="dialog" aria-labelledby="welcome-title">
+            <h1 id="welcome-title" class="title">CodeFall</h1>
             <p class="subtitle">Type the falling code words before they hit the ground! Speed increases over time like digital rain.</p>
-            <button class="btn" onclick="startGame(); playButtonClick();">Start Game</button>
-            <div style="position: absolute; bottom: 2rem; font-size: 0.875rem; color: #64748b; font-family: 'Courier New', monospace;">
-                Vibe Coded by <a href="https://github.com/gnaplds" target="_blank" style="color: #3b82f6;">Gene Apiladas</a> - 
-                <a target="_blank" href="https://icons8.com/icon/519/keyboard" style="color: #3b82f6;">Keyboard</a> icon by <a target="_blank" href="https://icons8.com" style="color: #3b82f6;">Icons8</a>
+            <div role="group" aria-label="Main menu options">
+                <button class="btn" type="button" onclick="showDifficultySelection(); playButtonClick();">Start Game</button>
+                <button class="btn secondary" type="button" onclick="showLeaderboard(); playButtonClick();">Leaderboards</button>
             </div>
-        </div>
+            <footer style="position: absolute; bottom: 2rem; font-size: var(--font-size-sm); color: var(--text-dark); text-align: center;">
+                <p>Vibe Coded by <a href="https://github.com/gnaplds" target="_blank" style="color: var(--color-primary);">Gene Apiladas</a> - 
+                <a target="_blank" href="https://icons8.com/icon/519/keyboard" style="color: #3b82f6;">Keyboard</a> icon by <a target="_blank" href="https://icons8.com" style="color: #3b82f6;">Icons8</a></p>
+            </footer>
+        </section>
+
+        <!-- Difficulty Selection Screen -->
+        <section id="difficulty-screen" class="screen-overlay hidden" role="dialog" aria-labelledby="difficulty-title">
+            <h2 id="difficulty-title" class="title">Choose Your Challenge</h2>
+            <p class="subtitle">Select your preferred difficulty mode</p>
+            
+            <div class="difficulty-cards" role="group" aria-label="Difficulty options">
+                <div class="difficulty-card easy" tabindex="0" role="button" aria-describedby="easy-desc" 
+                     onclick="startGame('easy'); playButtonClick();" 
+                     onkeydown="handleCardKeydown(event, 'easy')">
+                    <h3 class="difficulty-title">Easy Mode</h3>
+                    <ul id="easy-desc" class="difficulty-features">
+                        <li>Slower starting speed</li>
+                        <li>3 lives to work with</li>
+                        <li>100 common programming terms</li>
+                        <li>Perfect for learning</li>
+                        <li>Gradual speed increase</li>
+                    </ul>
+                </div>
+                
+                <div class="difficulty-card challenge" tabindex="0" role="button" aria-describedby="challenge-desc"
+                     onclick="startGame('challenge'); playButtonClick();"
+                     onkeydown="handleCardKeydown(event, 'challenge')">
+                    <h3 class="difficulty-title">Challenge Mode</h3>
+                    <ul id="challenge-desc" class="difficulty-features">
+                        <li>Fast starting speed</li>
+                        <li>Only 1 life - no mistakes!</li>
+                        <li>300+ programming terms</li>
+                        <li>Expert level difficulty</li>
+                        <li>Rapid speed progression</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="btn secondary" type="button" onclick="goHome()">Back to Menu</button>
+        </section>
 
         <!-- Pause Screen -->
-        <div id="pause-screen" class="pause-screen hidden">
-            <div style="text-align: center; display: flex; flex-direction: column; gap: 1.5rem;">
-                <h2 class="pause-title">Game Paused</h2>
-                <p class="pause-subtitle">Take a breather! Your progress is saved.</p>
-                
-                <div class="pause-stats">
-                    <div class="pause-stat">
-                        <span>Current Score:</span>
-                        <span id="pause-score" style="font-weight: bold; color: #3b82f6;">0</span>
+        <section id="pause-screen" class="screen-overlay pause-screen hidden" role="dialog" aria-labelledby="pause-title">
+            <h2 id="pause-title" class="pause-title">Game Paused</h2>
+            <p class="subtitle">Take a breather! Your progress is saved.</p>
+            
+            <div class="stats-container">
+                <div class="stats-panel">
+                    <h3>Current Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Current Score:</span>
+                        <span id="pause-score" class="stat-value score">0</span>
                     </div>
-                    <div class="pause-stat">
-                        <span>Time Elapsed:</span>
-                        <span id="pause-time" style="font-weight: bold; color: #22c55e;">0:00</span>
+                    <div class="stat-item">
+                        <span class="stat-label">Time Elapsed:</span>
+                        <span id="pause-time" class="stat-value time">0:00</span>
                     </div>
-                    <div class="pause-stat">
-                        <span>Lives Remaining:</span>
-                        <span id="pause-lives" style="font-weight: bold; color: #ef4444;">3</span>
+                    <div class="stat-item">
+                        <span class="stat-label">Lives Remaining:</span>
+                        <span id="pause-lives" class="stat-value life">3</span>
                     </div>
-                    <div class="pause-stat">
-                        <span>High Score:</span>
-                        <span id="pause-high-score" style="font-weight: bold; color: #f59e0b;">0</span>
+                    <div class="stat-item">
+                        <span class="stat-label">Difficulty:</span>
+                        <span id="pause-difficulty" class="stat-value difficulty">Easy</span>
                     </div>
-                </div>
-
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn resume" onclick="resumeGame(); playButtonClick();">Resume Game</button>
-                    <button class="btn secondary" onclick="goHome(); playButtonClick();">Quit to Menu</button>
-                </div>
-
-                <div class="pause-controls">
-                    Press <strong>ESC</strong> to resume • Press <strong>Q</strong> to quit
-                </div>
-                <div class="pause-controls">
-                    Tip: Press <strong>CTRL + Backspace</strong> to quickly erase words
                 </div>
             </div>
-        </div>
+
+            <div role="group" aria-label="Pause menu options">
+                <button class="btn secondary" type="button" onclick="goHome(); playButtonClick();">Quit to Menu</button>
+                <button class="btn resume" type="button" onclick="resumeGame(); playButtonClick();">Resume Game</button>
+            </div>
+
+            <div style="margin-top: var(--spacing-md); font-size: var(--font-size-sm); color: var(--text-muted); text-align: center;">
+                <p>Press <kbd>ESC</kbd> to resume • Press <kbd>Q</kbd> to quit</p>
+                <p>Tip: Press <kbd>Ctrl + Backspace</kbd> to quickly erase words</p>
+            </div>
+        </section>
 
         <!-- Game Over Screen -->
-        <div id="game-over-screen" class="game-over-screen hidden">
-            <div style="text-align: center; display: flex; flex-direction: column; gap: 1.5rem;">
-                <h2 style="font-size: 2.5rem; font-weight: bold; color: #ef4444;">Game Over!</h2>
-                <div class="final-score">
-                    Final Score: <span id="final-score" style="font-weight: bold;">0</span>
+        <section id="game-over-screen" class="screen-overlay hidden" role="dialog" aria-labelledby="game-over-title">
+            <h2 id="game-over-title" class="game-over-title">Game Over!</h2>
+            
+            <div id="new-high-score" class="high-score-text hidden" role="status">
+                🎉 New High Score! 🎉
+            </div>
+
+            <div class="stats-container">
+                <div class="stats-panel">
+                    <h3>Final Statistics</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">Final Score:</span>
+                        <span id="final-score" class="stat-value score">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time Survived:</span>
+                        <span id="final-time" class="stat-value time">0:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Difficulty:</span>
+                        <span id="final-difficulty" class="stat-value difficulty">Easy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Words Typed:</span>
+                        <span id="final-words" class="stat-value words">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Accuracy:</span>
+                        <span id="final-accuracy" class="stat-value accuracy">100%</span>
+                    </div>
                 </div>
-                <div class="final-score">
-                    Time Survived: <span id="final-time" style="font-weight: bold;">0:00</span>
+
+                <form id="save-score-form" class="stats-panel">
+                    <h3>Save Your Score</h3>
+                    <div class="form-group">
+                        <label for="player-name">Enter Your Name:</label>
+                        <input id="player-name" type="text" placeholder="Your name" maxlength="50" required aria-describedby="name-help">
+                        <div id="name-help" class="sr-only">Enter your name to save your score to the leaderboard</div>
+                    </div>
+                    <div id="save-feedback" role="alert" aria-live="polite">
+                        <div id="save-error" class="message error hidden"></div>
+                        <div id="save-success" class="message success hidden"></div>
+                    </div>
+                    <button class="btn" type="submit">Save to Leaderboard</button>
+                    
+                    <div id="share-section" class="hidden" style="margin-top: var(--spacing-md); padding: var(--spacing-md); background: rgba(51, 65, 85, 0.3); border-radius: var(--border-radius-sm);">
+                        <p style="color: var(--color-success); margin-bottom: var(--spacing-sm);">Score saved! Share your achievement:</p>
+                        <div id="share-url" style="background: rgba(30, 41, 59, 0.9); border: 1px solid #4b5563; border-radius: var(--border-radius-sm); padding: var(--spacing-sm); font-family: var(--font-family-mono); font-size: var(--font-size-sm); color: var(--text-muted); word-break: break-all; margin: var(--spacing-sm) 0;"></div>
+                        <div style="display: flex; gap: var(--spacing-sm); justify-content: center; flex-wrap: wrap;">
+                            <button class="btn" type="button" onclick="copyShareUrl()">Copy Link</button>
+                            <button class="btn" type="button" onclick="shareToTwitter()">Share on Twitter</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <div role="group" aria-label="Game over options" style="display: flex; gap: var(--spacing-md); justify-content: center; flex-wrap: wrap; margin-top: var(--spacing-xl);">
+                <button class="btn" type="button" onclick="showDifficultySelection(); playButtonClick();">Play Again</button>
+                <button class="btn secondary" type="button" onclick="goHome()">Back to Home</button>
+            </div>
+        </section>
+
+        <!-- Leaderboard Screen -->
+        <section id="leaderboard-screen" class="screen-overlay hidden" role="dialog" aria-labelledby="leaderboard-title">
+            <h2 id="leaderboard-title" class="title">Leaderboard</h2>
+            <p class="subtitle">Top players from around the world</p>
+            
+            <div style="width: 100%; max-width: 800px; max-height: 70vh; overflow-y: auto; background: rgba(30, 41, 59, 0.9); border: 2px solid #4b5563; border-radius: var(--border-radius-lg); padding: var(--spacing-lg); margin: var(--spacing-md) 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-md); flex-wrap: wrap; gap: var(--spacing-md);">
+                    <h3 style="margin: 0; color: var(--text-primary);">Rankings</h3>
+                    <div role="group" aria-label="Filter leaderboard by difficulty">
+                        <button class="btn secondary" style="font-size: var(--font-size-sm); padding: var(--spacing-sm) var(--spacing-md);" onclick="filterLeaderboard('all')" data-filter="all">All</button>
+                        <button class="btn secondary" style="font-size: var(--font-size-sm); padding: var(--spacing-sm) var(--spacing-md);" onclick="filterLeaderboard('easy')" data-filter="easy">Easy</button>
+                        <button class="btn secondary" style="font-size: var(--font-size-sm); padding: var(--spacing-sm) var(--spacing-md);" onclick="filterLeaderboard('challenge')" data-filter="challenge">Challenge</button>
+                    </div>
                 </div>
-                <div id="new-high-score" class="high-score-text hidden">
-                    🎉 New High Score! 🎉
-                </div>
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <button class="btn" onclick="startGame(); playButtonClick();">Play Again</button>
-                    <button class="btn secondary" onclick="goHome()">Back to Home</button>
+                
+                <div id="leaderboard-list" role="list" aria-live="polite">
+                    <div class="message" style="text-align: center; padding: var(--spacing-xl); color: var(--text-muted);">Loading leaderboard...</div>
                 </div>
             </div>
-        </div>
+            
+            <button class="btn secondary" type="button" onclick="goHome(); playButtonClick();">Back to Menu</button>
+        </section>
 
         <!-- Ground Line -->
-        <div id="ground-line" class="ground-line hidden">
+        <div id="ground-line" class="ground-line hidden" aria-hidden="true">
             <div class="ground"></div>
             <div class="ground-glow"></div>
         </div>
 
         <!-- Falling Words Area -->
-        <div id="falling-words-area"></div>
+        <div id="falling-words-area" aria-live="polite" aria-label="Falling words to type"></div>
 
         <!-- Hidden input for capturing keystrokes -->
         <input 
             id="hidden-input" 
+            type="text"
+            aria-label="Game input field"
             style="position: absolute; left: -9999px; opacity: 0;" 
             autocomplete="off"
+            aria-describedby="game-instructions"
         />
+        <div id="game-instructions" class="sr-only">
+            Type the falling programming words before they hit the ground. Press Escape to pause, Ctrl+Backspace to clear current word.
+        </div>
     </main>
 </body>
 </html>

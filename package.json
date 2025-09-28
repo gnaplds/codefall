@@ -1,0 +1,22 @@
+{
+  "name": "codefall",
+  "version": "1.0.0",
+  "description": "A speed typing game for programming enthusiasts",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static build - no build step needed'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.1"
+  },
+  "keywords": [
+    "typing-game",
+    "programming",
+    "javascript",
+    "game"
+  ],
+  "author": "Gene Apiladas",
+  "license": "MIT"
+}
