@@ -80,8 +80,8 @@ class CodeFallGame {
                 spawnReduction: 100
             },
             challenge: {
-                baseSpeed: 1.2,
-                speedIncrement: 0.25,
+                baseSpeed: 1.5,
+                speedIncrement: 0.35,
                 lives: 1,
                 wordList: this.FULL_WORD_LIST,
                 spawnRate: 2000,
