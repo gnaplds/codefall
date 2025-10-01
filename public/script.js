@@ -27,7 +27,7 @@ class CodeFallGame {
             'install', 'import', 'export', 'module', 'component', 'interface',
             'button', 'click', 'event', 'mouse', 'keyboard', 'screen', 'window',
             'menu', 'dialog', 'form', 'text', 'image', 'video', 'audio',
-            'file', 'download', 'upload', 'sync', 'cloud', 'storage', 'drive'
+            'file', 'download', 'upload', 'sync', 'cloud', 'storage', 'drive', 'amogus'
         ];
 
         this.FULL_WORD_LIST = [
