@@ -81,11 +81,11 @@ class CodeFallGame {
             },
             challenge: {
                 baseSpeed: 1.5,
-                speedIncrement: 0.35,
+                speedIncrement: 0.5,
                 lives: 1,
                 wordList: this.FULL_WORD_LIST,
-                spawnRate: 2000,
-                spawnReduction: 150
+                spawnRate: 1500,
+                spawnReduction: 200
             }
         };
 
